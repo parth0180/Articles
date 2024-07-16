@@ -1,143 +1,88 @@
-Creating a README file for your project is a great idea to document its setup, functionality, and troubleshooting steps. Below is an example README file that includes instructions on installation, logic explanation, and troubleshooting tips for handling lock wait timeouts in your PHP application with MySQL.
 
-### README.md
+# Blog Application
 
----
-
-# Articles Demo Application README
-
-This repository contains a simple blog application built using HTML, CSS, PHP, and MySQL. The application allows users to create, read, update, and delete articles.
+This is a simple blog application built using HTML, CSS, PHP, and MySQL. It allows users to manage articles with basic CRUD operations.
 
 ### Features
 
-- **Create Articles:** Users can create new articles with a title, description, category, and slug.
-- **Read Articles:** Display all articles with details including creation time and last update time.
+- **Create Articles:** Add new articles with a title, description, category, and slug.
+- **Read Articles:** View all articles with options to search and sort.
 - **Update Articles:** Edit existing articles.
 - **Delete Articles:** Remove articles from the database.
 
 ### Technologies Used
 
-- **Frontend:** HTML, CSS (Bootstrap for styling)
-- **Backend:** PHP
-- **Database:** MySQL
+- **Frontend:** HTML, CSS (Bootstrap 4.5.2)
+- **Backend:** PHP (7.4.x)
+- **Database:** MySQL (8.0.x)
 
-### Installation
+### Functionality Overview
 
-Follow these steps to set up the blog application locally on your machine.
+#### Articles Page
+
+The main functionality of the blog application is accessible through `articles.php`, where users can:
+
+- **View Articles:** Displays a table listing all articles with details such as title, category, slug, description, creation date, and last update date.
+- **Search Articles:** Use the search box to filter articles by title, category, slug, or description.
+- **Sort Articles:** Click on column headers (`Created At` or `Updated At`) to sort articles in ascending or descending order.
+- **Manage Articles:** Each article row includes `Update` and `Delete` buttons for editing and removing articles.
+
+#### Update Article
+
+- Clicking on the `Update` button redirects the user to `update_article.php`, where they can modify the content of an existing article.
+
+#### Delete Article
+
+- Clicking on the `Delete` button triggers the deletion of the article. A confirmation dialog ensures that the user intends to delete the article.
+
+### Usage
 
 1. **Clone the Repository:**
+
+   Clone the repository to your local machine.
+
    ```bash
    git clone <repository-url>
    cd blog-application
    ```
 
-2. **Database Setup:**
+2. **Database Configuration:**
 
-   - **MySQL Configuration:**
-     - Ensure MySQL server is installed and running.
-     - Modify MySQL configuration (`my.cnf` or `my.ini`) to increase `innodb_lock_wait_timeout` to handle potential lock wait timeouts. Example configuration:
-       ```ini
-       [mysqld]
-       innodb_lock_wait_timeout = 120
-       ```
+   Update `db.php` with your MySQL database credentials.
 
-3. **Import Database:**
-   - Import the provided SQL file (`blog_db.sql`) into your MySQL database to create the necessary tables.
-     ```bash
-     mysql -u root -p blog_db < blog_db.sql
-     ```
+   ```php
+   <?php
+   $servername = "localhost";
+   $username = "root";
+   $password = "";
+   $dbname = "blog_db";
 
-4. **Configure Database Connection:**
-   - Update `config.php` with your MySQL database credentials.
-     ```php
-     <?php
-     $servername = "localhost";
-     $username = "root";
-     $password = "";
-     $dbname = "blog_db";
+   $conn = new mysqli($servername, $username, $password, $dbname);
 
-     // Create connection
-     $conn = new mysqli($servername, $username, $password, $dbname);
+   if ($conn->connect_error) {
+       die("Connection failed: " . $conn->connect_error);
+   }
+   ?>
+   ```
 
-     if ($conn->connect_error) {
-         die("Connection failed: " . $conn->connect_error);
-     }
-     ?>
-     ```
+3. **Run the Application:**
 
-5. **Run the Application:**
-   - Start your local web server (e.g., Apache) and navigate to the blog application directory in your web browser.
-   - Example URL: `http://localhost/blog-application/articles.php`
+   - Start your local web server (e.g., Apache).
+   - Open `articles.php` in your web browser to manage articles.
 
-### Logic for Handling Lock Wait Timeouts
+     Example URL: `http://localhost/blog-application/articles.php`
 
-The application includes retry logic in `delete_article.php` to handle lock wait timeouts gracefully. If a `DELETE` operation encounters a lock wait timeout, the script retries the operation up to a specified number of times (`$maxRetries`). This helps mitigate transient database locking issues.
+### Notes
 
-```php
-<?php
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "blog_db";
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-function deleteArticle($conn, $id) {
-    $sql = "DELETE FROM articles WHERE id=$id";
-    return $conn->query($sql);
-}
-
-if (isset($_GET['id'])) {
-    $id = $_GET['id'];
-    $retryCount = 0;
-    $maxRetries = 3; // Adjust the number of retries as needed
-    $success = false;
-
-    while ($retryCount < $maxRetries && !$success) {
-        if (deleteArticle($conn, $id)) {
-            $success = true;
-        } else {
-            $error = $conn->error;
-            if (strpos($error, 'Lock wait timeout exceeded') !== false) {
-                $retryCount++;
-                sleep(1); // Wait for 1 second before retrying
-            } else {
-                echo "Error: " . $error;
-                break;
-            }
-        }
-    }
-
-    if ($success) {
-        // Redirect to articles.php after deletion
-        header("Location: articles.php");
-        exit();
-    } else {
-        echo "Failed to delete the article after $maxRetries retries.";
-    }
-
-    $conn->close();
-} else {
-    echo "Invalid request.";
-}
-?>
-```
-
-### Troubleshooting
-
-- **MySQL Lock Wait Timeout Exceeded:**
-  - If you encounter `Lock wait timeout exceeded` errors, try increasing `innodb_lock_wait_timeout` in MySQL configuration.
-  - Implement retry logic in database operations (`delete_article.php`) to handle transient locking issues.
-
-- **Database Connection Issues:**
-  - Ensure `config.php` has correct MySQL database credentials.
-  - Verify MySQL server is running and accessible from PHP scripts.
+- This application uses Bootstrap 4.5.2 for styling and layout.
+- Ensure to handle security considerations (e.g., input validation, SQL injection prevention) when deploying in production environments.
 
 ---
 
-Adjust the paths, database credentials, and retry logic (`$maxRetries`) as per your specific application needs. This README provides a structured guide for setting up, understanding the application's logic, and troubleshooting common issues.
+This README provides a clear overview of the blog application's features, how to use it, and important considerations. Adjust the paths, configurations, and additional details based on your specific setup and requirements.
+
+<br>
+
+# [Demo Link](https://photos.app.goo.gl/9y3R1vYqTwcxzM3u5)
+
+<hr/>
